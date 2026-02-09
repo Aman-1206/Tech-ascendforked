@@ -510,13 +510,13 @@ const AdminPage = () => {
             <h1 className="text-3xl font-bold text-white mb-2">Admin Dashboard</h1>
             <p className="text-gray-400">Welcome back, {user.firstName || 'Admin'}!</p>
           </div>
-          <div className="flex items-center gap-2 text-sm">
+          <div className="flex flex-wrap items-center gap-2 text-sm">
             {/* Registration Status Toggle */}
-            <div className="flex items-center bg-slate-800/50 rounded-full p-1 border border-purple-500/20 mr-4">
+            <div className="flex items-center bg-slate-800/50 rounded-full p-1 border border-purple-500/20">
               <button
                 onClick={toggleRegistrationStatus}
                 disabled={updatingSettings}
-                className={`flex items-center gap-2 px-4 py-2 rounded-full font-medium transition-all ${
+                className={`flex items-center gap-2 px-3 py-2 rounded-full font-medium transition-all text-xs sm:text-sm sm:px-4 ${
                   registrationOpen 
                     ? 'bg-green-500/20 text-green-400' 
                     : 'bg-red-500/20 text-red-400'
@@ -525,16 +525,18 @@ const AdminPage = () => {
                 <span className={`w-2 h-2 rounded-full ${
                   registrationOpen ? 'bg-green-400 animate-pulse' : 'bg-red-400'
                 }`}></span>
-                {registrationOpen ? 'Registration Open' : 'Registration Closed'}
+                <span className="hidden sm:inline">{registrationOpen ? 'Registration Open' : 'Registration Closed'}</span>
+                <span className="sm:hidden">{registrationOpen ? 'Open' : 'Closed'}</span>
               </button>
             </div>
 
-            <span className="flex items-center gap-2 px-3 py-2 bg-green-500/20 border border-green-500/30 rounded-full text-green-400">
+            <span className="flex items-center gap-2 px-2 py-1.5 sm:px-3 sm:py-2 bg-green-500/20 border border-green-500/30 rounded-full text-green-400 text-xs sm:text-sm">
               <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
-              Live Updates
+              <span className="hidden sm:inline">Live Updates</span>
+              <span className="sm:hidden">Live</span>
             </span>
             {lastUpdated && (
-              <span className="text-gray-500">
+              <span className="text-gray-500 text-xs hidden sm:inline">
                 Updated: {lastUpdated.toLocaleTimeString()}
               </span>
             )}
@@ -567,35 +569,39 @@ const AdminPage = () => {
             </div>
           </div>
 
-          <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-6 border border-purple-500/20">
+          <Link 
+            href="/admin/registrations"
+            className="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-6 border border-purple-500/20 hover:border-purple-500/40 transition-all group"
+          >
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-400 text-sm">BugHunt Registrations</p>
+                <p className="text-gray-400 text-sm group-hover:text-purple-300 transition-colors">Event Registrations</p>
                 <p className="text-3xl font-bold text-white mt-1">
-                  {registrations.filter(r => r.eventId === 1).length}
+                  {registrations.length}
                 </p>
+                <p className="text-purple-400 text-xs mt-1">Click to view by event →</p>
               </div>
-              <div className="w-12 h-12 bg-pink-500/20 rounded-xl flex items-center justify-center">
-                <span className="text-2xl">🐛</span>
+              <div className="w-12 h-12 bg-pink-500/20 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                <span className="text-2xl">📋</span>
               </div>
             </div>
-          </div>
+          </Link>
         </div>
 
         {/* Quick Actions */}
         <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-6 border border-purple-500/20 mb-8">
           <h2 className="text-xl font-bold text-white mb-4">Quick Actions</h2>
-          <div className="flex flex-wrap gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
             <Link 
               href="/events"
-              className="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-medium transition-colors"
+              className="px-4 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-medium transition-colors text-center text-sm sm:text-base"
             >
               View Events
             </Link>
             <button 
               onClick={() => exportToExcel(registrations)}
               disabled={registrations.length === 0}
-              className="px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-xl font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              className="px-4 py-3 bg-green-600 hover:bg-green-700 text-white rounded-xl font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm sm:text-base"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -604,7 +610,7 @@ const AdminPage = () => {
             </button>
             <button 
               onClick={() => window.location.reload()}
-              className="px-6 py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-xl font-medium transition-colors"
+              className="px-4 py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-xl font-medium transition-colors text-sm sm:text-base"
             >
               Refresh Data
             </button>
@@ -616,18 +622,18 @@ const AdminPage = () => {
           <h2 className="text-xl font-bold text-white mb-4">Manage Admins</h2>
           
           {/* Add Admin Form */}
-          <form onSubmit={showAddAdminConfirm} className="flex gap-3 mb-6">
+          <form onSubmit={showAddAdminConfirm} className="flex flex-col sm:flex-row gap-3 mb-6">
             <input
               type="email"
               value={newAdminEmail}
               onChange={(e) => setNewAdminEmail(e.target.value)}
               placeholder="Enter email to add as admin..."
-              className="flex-1 bg-slate-700/50 border border-purple-500/20 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500"
+              className="flex-1 bg-slate-700/50 border border-purple-500/20 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 text-sm sm:text-base"
             />
             <button
               type="submit"
               disabled={addingAdmin || !newAdminEmail.trim()}
-              className="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              className="px-4 sm:px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm sm:text-base"
             >
               {addingAdmin ? (
                 <>
@@ -657,16 +663,16 @@ const AdminPage = () => {
             {admins.map((adminEmail) => (
               <div 
                 key={adminEmail}
-                className="flex items-center justify-between p-4 bg-slate-700/30 rounded-xl border border-purple-500/10"
+                className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-slate-700/30 rounded-xl border border-purple-500/10 gap-3"
               >
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-purple-500/20 rounded-full flex items-center justify-center">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-10 h-10 bg-purple-500/20 rounded-full flex items-center justify-center flex-shrink-0">
                     <span className="text-purple-400 text-sm font-medium">
                       {adminEmail.charAt(0).toUpperCase()}
                     </span>
                   </div>
-                  <div>
-                    <p className="text-white font-medium">{adminEmail}</p>
+                  <div className="min-w-0">
+                    <p className="text-white font-medium text-sm sm:text-base truncate">{adminEmail}</p>
                     {adminEmail.toLowerCase() === superAdmin.toLowerCase() && (
                       null
                     )}
@@ -676,7 +682,7 @@ const AdminPage = () => {
                   <button
                     onClick={() => showRemoveAdminConfirm(adminEmail)}
                     disabled={removingAdmin === adminEmail}
-                    className="px-4 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-lg font-medium transition-colors disabled:opacity-50 flex items-center gap-2"
+                    className="px-3 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-lg font-medium transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-xs sm:text-sm self-end sm:self-auto"
                   >
                     {removingAdmin === adminEmail ? (
                       <div className="w-4 h-4 border-2 border-red-400 border-t-transparent rounded-full animate-spin"></div>
@@ -701,11 +707,11 @@ const AdminPage = () => {
 
         {/* Manage Events Section */}
         <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-6 border border-purple-500/20 mb-8">
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
             <h2 className="text-xl font-bold text-white">Manage Events</h2>
             <button
               onClick={() => openEditModal(null)}
-              className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors flex items-center gap-2"
+              className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors flex items-center justify-center gap-2 text-sm"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
@@ -719,59 +725,60 @@ const AdminPage = () => {
               <p className="text-gray-400">No events found</p>
             </div>
           ) : (
-            <div className="grid gap-4">
+            <div className="grid gap-3">
               {events.map((event) => (
                 <div 
                   key={event.id}
-                  className="flex items-center justify-between p-4 bg-slate-700/30 rounded-xl border border-purple-500/10 hover:border-purple-500/30 transition-colors"
+                  className="flex items-center justify-between p-3 sm:p-4 bg-slate-700/30 rounded-xl border border-purple-500/10 hover:border-purple-500/30 transition-colors gap-2"
                 >
-                  <div className="flex items-center gap-4">
-                    <div className="w-14 h-14 bg-gradient-to-br from-purple-500/20 to-pink-500/20 rounded-xl flex items-center justify-center overflow-hidden">
-                      {event.imagePath ? (
-                        <img src={event.imagePath} alt={event.name} className="w-full h-full object-cover rounded-xl" />
-                      ) : (
-                        <span className="text-2xl">{event.image}</span>
-                      )}
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2 mb-1">
-                        <h3 className="text-white font-semibold">{event.name}</h3>
-                        {(() => {
-                          const isExpired = event.deadline && new Date(event.deadline) < new Date();
-                          const isClosed = !event.registrationOpen;
-                          
-                          if (isExpired) {
-                            return <span className="px-2 py-0.5 rounded text-xs font-medium bg-gray-500/20 text-gray-400 border border-gray-500/30">Ended</span>;
-                          }
-                          if (isClosed) {
-                            return <span className="px-2 py-0.5 rounded text-xs font-medium bg-red-500/20 text-red-400 border border-red-500/30">Closed</span>;
-                          }
-                          return <span className="px-2 py-0.5 rounded text-xs font-medium bg-green-500/20 text-green-400 border border-green-500/30">Open</span>;
-                        })()}
-                      </div>
-                      <p className="text-gray-400 text-sm flex items-center gap-2">
-                        <span>📅 {event.date}</span>
-                        <span className="w-1 h-1 rounded-full bg-gray-600"></span>
-                        <span>{event.mode}</span>
-                      </p>
-                    </div>
+                  {/* Image - hidden on mobile */}
+                  <div className="hidden sm:flex w-14 h-14 bg-gradient-to-br from-purple-500/20 to-pink-500/20 rounded-xl items-center justify-center overflow-hidden flex-shrink-0">
+                    {event.imagePath ? (
+                      <img src={event.imagePath} alt={event.name} className="w-full h-full object-cover rounded-xl" />
+                    ) : (
+                      <span className="text-2xl">{event.image}</span>
+                    )}
                   </div>
-                  <div className="flex items-center gap-2">
+                  
+                  {/* Event Info */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-0.5">
+                      <h3 className="text-white font-semibold text-sm truncate">{event.name}</h3>
+                      {(() => {
+                        const isExpired = event.deadline && new Date(event.deadline) < new Date();
+                        const isClosed = !event.registrationOpen;
+                        
+                        if (isExpired) {
+                          return <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-gray-500/20 text-gray-400 border border-gray-500/30 flex-shrink-0">Ended</span>;
+                        }
+                        if (isClosed) {
+                          return <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-red-500/20 text-red-400 border border-red-500/30 flex-shrink-0">Closed</span>;
+                        }
+                        return <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-green-500/20 text-green-400 border border-green-500/30 flex-shrink-0">Open</span>;
+                      })()}
+                    </div>
+                    <p className="text-gray-400 text-xs hidden sm:block">
+                      📅 {event.date} • {event.mode}
+                    </p>
+                  </div>
+                  
+                  {/* Action Buttons */}
+                  <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
                     <button
                       onClick={() => openEditModal(event)}
-                      className="px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors flex items-center gap-2 text-sm"
+                      className="p-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
+                      title="Edit event"
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                       </svg>
-                      Edit
                     </button>
                     <button
                       onClick={() => setDeleteEventModal({ show: true, event })}
                       className="p-2 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-colors"
                       title="Delete event"
                     >
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                       </svg>
                     </button>

@@ -78,6 +78,10 @@ const RegisterPage = () => {
       setError('Please enter your college name');
       return;
     }
+    if (!formData.phone.trim()) {
+      setError('Please enter your phone number');
+      return;
+    }
 
     setIsSubmitting(true);
 
@@ -97,7 +101,7 @@ const RegisterPage = () => {
           course: formData.course,
           year: formData.year,
           college: collegeName,
-          phone: formData.phone.trim() || 'Not provided',
+          phone: formData.phone.trim(),
           eventId: event.id,
           eventName: event.name,
         }),
@@ -245,7 +249,6 @@ const RegisterPage = () => {
                 <option value="2nd Year">2nd Year</option>
                 <option value="3rd Year">3rd Year</option>
                 <option value="4th Year">4th Year</option>
-                <option value="5th Year">5th Year</option>
               </select>
             </div>
 
@@ -312,7 +315,7 @@ const RegisterPage = () => {
             {/* Phone */}
             <div>
               <label className="block text-gray-300 text-sm font-medium mb-2">
-                Phone Number <span className="text-gray-500">(Optional)</span>
+                Phone Number <span className="text-red-400">*</span>
               </label>
               <input
                 type="tel"
