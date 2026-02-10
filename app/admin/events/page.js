@@ -171,19 +171,73 @@ const AdminEventsPage = () => {
     }));
   };
 
+  // Image compression helper
+  const compressImage = (file) => {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = (event) => {
+        const img = new Image();
+        img.src = event.target.result;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+          
+          // Max dimensions
+          const MAX_WIDTH = 800;
+          const MAX_HEIGHT = 800;
+          
+          let width = img.width;
+          let height = img.height;
+          
+          if (width > height) {
+            if (width > MAX_WIDTH) {
+              height *= MAX_WIDTH / width;
+              width = MAX_WIDTH;
+            }
+          } else {
+            if (height > MAX_HEIGHT) {
+              width *= MAX_HEIGHT / height;
+              height = MAX_HEIGHT;
+            }
+          }
+          
+          canvas.width = width;
+          canvas.height = height;
+          ctx.drawImage(img, 0, 0, width, height);
+          
+          // Compress to JPEG with 0.7 quality
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+          resolve(dataUrl);
+        };
+      };
+    });
+  };
+
   // Handle image upload
   const handleImageUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
+    // Show preview immediately
     const reader = new FileReader();
     reader.onload = (e) => setImagePreview(e.target.result);
     reader.readAsDataURL(file);
 
     setUploadingImage(true);
     try {
+      // Compress image before upload
+      const compressedDataUrl = await compressImage(file);
+      
+      // Convert base64 back to blob for upload if needed, 
+      // but our API expects a file in formData.
+      // Let's convert the dataURL to a Blob
+      const res = await fetch(compressedDataUrl);
+      const blob = await res.blob();
+      const compressedFile = new File([blob], file.name, { type: 'image/jpeg' });
+
       const formData = new FormData();
-      formData.append('image', file);
+      formData.append('image', compressedFile);
 
       const response = await fetch('/api/upload', {
         method: 'POST',
@@ -193,9 +247,12 @@ const AdminEventsPage = () => {
       const data = await response.json();
       if (data.success) {
         setEditForm(prev => ({ ...prev, imagePath: data.imagePath }));
+      } else {
+        alert('Image upload failed: ' + (data.error || 'Unknown error'));
       }
     } catch (error) {
       console.error('Error uploading image:', error);
+      alert('Error uploading image');
     }
     setUploadingImage(false);
   };
