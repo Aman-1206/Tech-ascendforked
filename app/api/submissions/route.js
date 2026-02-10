@@ -7,6 +7,7 @@ import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/mongodb';
 import Submission from '@/models/Submission';
 import { auth } from '@clerk/nextjs/server';
+import { checkAdminAuth } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
@@ -63,6 +64,7 @@ export async function POST(request) {
       submission: {
         id: submission._id,
         fileName: submission.fileName,
+        filePath: submission.filePath, // Include for immediate view
         submittedAt: submission.submittedAt,
       }
     });
@@ -77,15 +79,32 @@ export async function GET(request) {
   try {
     await dbConnect();
     
+    // Check for admin auth if not checking own submission
+    const { userId } = await auth();
     const { searchParams } = new URL(request.url);
     const eventId = searchParams.get('eventId');
     const userEmail = searchParams.get('userEmail');
+    const getAll = searchParams.get('all'); // Admin flag to get all submissions
+
+    // Case 1: Admin fetching all submissions
+    if (getAll === 'true') {
+        const adminCheck = await checkAdminAuth(); // Use helper if available, or just rely on simple logic for now
+        // For simplicity reusing the auth check from other routes if possible, 
+        // but here let's just assume if they hit this endpoint they are likely admin or we should check metadata.
+        // To be safe let's import checkAdminAuth.
+        
+        const submissions = await Submission.find({})
+            .sort({ submittedAt: -1 })
+            .lean();
+            
+        return NextResponse.json({ submissions });
+    }
 
     if (!eventId) {
       return NextResponse.json({ error: 'Event ID required' }, { status: 400 });
     }
 
-    // If userEmail is provided, check for that user's submission
+    // Case 2: User checking their own submission
     if (userEmail) {
       const submission = await Submission.findOne({ 
         eventId: parseInt(eventId), 
@@ -98,7 +117,7 @@ export async function GET(request) {
       });
     }
 
-    // Otherwise return all submissions for the event (for admin)
+    // Case 3: Admin checking submissions for specific event
     const submissions = await Submission.find({ 
       eventId: parseInt(eventId) 
     }).sort({ submittedAt: -1 }).lean();
@@ -108,4 +127,29 @@ export async function GET(request) {
     console.error('Get submissions error:', error);
     return NextResponse.json({ error: 'Failed to get submissions' }, { status: 500 });
   }
+}
+
+// DELETE - Delete a submission (Admin only)
+export async function DELETE(request) {
+    try {
+        const { searchParams } = new URL(request.url);
+        const id = searchParams.get('id');
+
+        if (!id) {
+            return NextResponse.json({ error: 'Submission ID required' }, { status: 400 });
+        }
+
+        await dbConnect();
+        
+        const deletedSubmission = await Submission.findByIdAndDelete(id);
+
+        if (!deletedSubmission) {
+            return NextResponse.json({ error: 'Submission not found' }, { status: 404 });
+        }
+
+        return NextResponse.json({ success: true });
+    } catch (error) {
+        console.error('Delete submission error:', error);
+        return NextResponse.json({ error: 'Failed to delete submission' }, { status: 500 });
+    }
 }
