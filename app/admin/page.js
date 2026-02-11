@@ -261,7 +261,7 @@ const AdminPage = () => {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <div className="bg-[#111]/50 backdrop-blur-sm rounded-2xl p-5 border border-[#333]">
           <div className="flex items-center justify-between">
             <div>
@@ -382,8 +382,8 @@ const AdminPage = () => {
                     <p className="text-gray-400 text-xs">{reg.email}</p>
                   </div>
                 </div>
-                <div className="text-right">
-                  <span className="px-2 py-1 bg-orange-500/10 text-orange-300 rounded-lg text-xs">
+                <div className="text-right shrink-0">
+                  <span className="inline-block px-2 py-1 bg-orange-500/10 text-orange-300 rounded-lg text-xs max-w-[80px] sm:max-w-none truncate">
                     {reg.eventName}
                   </span>
                   <p className="text-gray-500 text-xs mt-1">

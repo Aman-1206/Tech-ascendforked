@@ -98,8 +98,12 @@ const Navbar = () => {
 
           {/* Mobile Menu Button */}
           <button
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="md:hidden text-gray-300 hover:text-white focus:outline-none"
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsMenuOpen(!isMenuOpen);
+            }}
+            className="md:hidden p-2 text-gray-300 hover:text-white focus:outline-none rounded-lg hover:bg-white/10"
+            aria-label="Toggle menu"
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               {isMenuOpen ? (
@@ -144,16 +148,20 @@ const Navbar = () => {
             </Link>
             <div className="flex flex-col space-y-3 pt-3 border-t border-[#333]">
               <SignedOut>
-                <SignInButton mode="modal">
-                  <button className="text-gray-300 hover:text-white transition-colors duration-300 font-medium px-2 py-2 text-left">
-                    Sign In
-                  </button>
-                </SignInButton>
-                <SignInButton mode="modal">
-                  <button className="bg-white text-black px-5 py-2 rounded-lg font-bold text-center">
-                    Registration
-                  </button>
-                </SignInButton>
+                <div onClick={() => setIsMenuOpen(false)}>
+                  <SignInButton mode="modal">
+                    <button className="w-full text-gray-300 hover:text-white transition-colors duration-300 font-medium px-2 py-2 text-left">
+                      Sign In
+                    </button>
+                  </SignInButton>
+                </div>
+                <div onClick={() => setIsMenuOpen(false)}>
+                  <SignInButton mode="modal">
+                    <button className="w-full bg-white text-black px-5 py-2 rounded-lg font-bold text-center mt-2">
+                      Registration
+                    </button>
+                  </SignInButton>
+                </div>
               </SignedOut>
               <SignedIn>
                 <Link
