@@ -51,10 +51,12 @@ const exportToExcel = (registrations) => {
 
 const AdminPage = () => {
   const { user, isLoaded } = useUser();
-  const [registrations, setRegistrations] = useState([]);
+  const [registrations, setRegistrations] = useState([]); // This will now hold RECENT registrations
+  const [totalRegistrations, setTotalRegistrations] = useState(0);
   const [events, setEvents] = useState([]);
   const [admins, setAdmins] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [exporting, setExporting] = useState(false); // New state for export loading
   const [lastUpdated, setLastUpdated] = useState(null);
   const [isAdmin, setIsAdmin] = useState(null);
   
@@ -62,10 +64,10 @@ const AdminPage = () => {
   const [registrationOpen, setRegistrationOpen] = useState(true);
   const [updatingSettings, setUpdatingSettings] = useState(false);
 
-  // Function to fetch registrations (also verifies admin access)
-  const fetchRegistrations = async () => {
+  // Function to fetch registrations stats (fast)
+  const fetchDashboardStats = async () => {
     try {
-      const response = await fetch('/api/registrations');
+      const response = await fetch('/api/registrations?dashboard=true');
       
       if (response.status === 401 || response.status === 403) {
         setIsAdmin(false);
@@ -75,14 +77,36 @@ const AdminPage = () => {
       
       if (response.ok) {
         const data = await response.json();
-        setRegistrations(data.registrations || []);
+        // Update state with stats
+        if (data.stats) {
+          setTotalRegistrations(data.stats.total);
+          setRegistrations(data.stats.recent || []);
+        }
         setIsAdmin(true);
         setLastUpdated(new Date());
       }
     } catch (error) {
-      console.error('Error fetching registrations:', error);
+      console.error('Error fetching registration stats:', error);
     }
     setLoading(false);
+  };
+
+  // Function to fetch full data for export (on demand)
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      const response = await fetch('/api/registrations');
+      if (response.ok) {
+        const data = await response.json();
+        exportToExcel(data.registrations || []);
+      } else {
+        alert('Failed to fetch data for export');
+      }
+    } catch (error) {
+      console.error('Error exporting data:', error);
+      alert('Error exporting data');
+    }
+    setExporting(false);
   };
 
   // Function to fetch events
@@ -145,7 +169,7 @@ const AdminPage = () => {
   // Initial fetch and auto-refresh
   useEffect(() => {
     if (isLoaded && user) {
-      fetchRegistrations();
+      fetchDashboardStats();
       fetchEvents();
       fetchAdmins();
       fetchSettings();
@@ -153,7 +177,7 @@ const AdminPage = () => {
       // Auto-refresh every 10 seconds
       const interval = setInterval(() => {
         if (isAdmin) {
-          fetchRegistrations();
+          fetchDashboardStats();
         }
       }, 10000);
 
@@ -161,12 +185,8 @@ const AdminPage = () => {
     }
   }, [isLoaded, user, isAdmin]);
 
-  // Get today's registrations
-  const todayRegistrations = registrations.filter(r => {
-    const today = new Date();
-    const regDate = new Date(r.registeredAt);
-    return regDate.toDateString() === today.toDateString();
-  });
+  // Get today's registrations - REMOVED for optimization
+  // const todayRegistrations = registrations.filter(r => { ... });
 
   // Get active events (not ended)
   const activeEvents = events.filter(e => {
@@ -246,7 +266,7 @@ const AdminPage = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-gray-400 text-sm">Total Registrations</p>
-              <p className="text-3xl font-bold text-white mt-1">{registrations.length}</p>
+              <p className="text-3xl font-bold text-white mt-1">{totalRegistrations}</p>
             </div>
             <div className="w-12 h-12 bg-orange-500/20 rounded-xl flex items-center justify-center">
               <span className="text-2xl">👥</span>
@@ -254,17 +274,17 @@ const AdminPage = () => {
           </div>
         </div>
 
-        <div className="bg-[#111]/50 backdrop-blur-sm rounded-2xl p-5 border border-[#333]">
+        {/* <div className="bg-[#111]/50 backdrop-blur-sm rounded-2xl p-5 border border-[#333]">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-gray-400 text-sm">Today</p>
-              <p className="text-3xl font-bold text-white mt-1">{todayRegistrations.length}</p>
+              <p className="text-3xl font-bold text-white mt-1">-</p> 
             </div>
             <div className="w-12 h-12 bg-blue-500/20 rounded-xl flex items-center justify-center">
               <span className="text-2xl">📈</span>
             </div>
           </div>
-        </div>
+        </div> */}
 
         <div className="bg-[#111]/50 backdrop-blur-sm rounded-2xl p-5 border border-[#333]">
           <div className="flex items-center justify-between">
@@ -310,12 +330,16 @@ const AdminPage = () => {
             <span className="text-white text-sm font-medium">Manage Events</span>
           </Link>
           <button 
-            onClick={() => exportToExcel(registrations)}
-            disabled={registrations.length === 0}
+            onClick={handleExport}
+            disabled={totalRegistrations === 0 || exporting}
             className="p-4 bg-blue-600/10 hover:bg-blue-600/20 border border-blue-500/20 rounded-xl text-center transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <span className="text-2xl block mb-2">📊</span>
-            <span className="text-white text-sm font-medium">Export Excel</span>
+            {exporting ? (
+               <span className="text-2xl block mb-2 animate-spin">⏳</span>
+            ) : (
+               <span className="text-2xl block mb-2">📊</span>
+            )}
+            <span className="text-white text-sm font-medium">{exporting ? 'Exporting...' : 'Export Excel'}</span>
           </button>
           <Link 
             href="/admin/settings"

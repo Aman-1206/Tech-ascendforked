@@ -160,14 +160,26 @@ const EventDetailPage = () => {
         {/* Event Header */}
         <div className="bg-[#111]/50 backdrop-blur-sm rounded-3xl border border-[#333] overflow-hidden mb-8">
           {/* Hero Section */}
-          <div 
-            className="relative p-8 sm:p-12 text-center overflow-hidden min-h-[400px] flex flex-col justify-center items-center"
-            style={{
-              backgroundImage: event.imagePath ? `url(${event.imagePath})` : 'none',
-              backgroundSize: 'cover',
-              backgroundPosition: 'center',
-            }}
-          >
+          <div className="relative min-h-[400px] overflow-hidden">
+            {/* Background Image using <picture> for Art Direction */}
+            {(event.imagePath || event.mobileImagePath) && (
+              <div className="absolute inset-0">
+                <picture>
+                  {event.mobileImagePath && (
+                    <source media="(max-width: 640px)" srcSet={event.mobileImagePath} />
+                  )}
+                  <img 
+                    src={event.imagePath || event.mobileImagePath} 
+                    alt={event.name}
+                    className="w-full h-full object-cover object-center"
+                  />
+                </picture>
+                {/* Overlay for better text readability */}
+                <div className="absolute inset-0 bg-black/50"></div>
+              </div>
+            )}
+            
+            <div className="relative p-8 sm:p-12 text-center flex flex-col justify-center items-center h-full min-h-[400px] z-10">
            {/* Overlay/Gradient Background */}
              {/* <div className={`absolute inset-0 ${
               event.imagePath 
@@ -191,6 +203,7 @@ const EventDetailPage = () => {
               </h1>
               <p className="text-xl sm:text-2xl text-gray-200 italic max-w-3xl mx-auto drop-shadow-md">{event.tagline}</p>
             </div> */}
+            </div>
           </div>
 
           {/* Quick Info Cards */}

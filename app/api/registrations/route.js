@@ -72,9 +72,25 @@ export async function GET(request) {
       return NextResponse.json({ registrations });
     }
 
-    // Admin: Fetch all registrations
+    // Admin: Fetch all registrations or dashboard stats
     const { isAdmin, error } = await checkAdminAuth();
     if (!isAdmin) return error;
+
+    const isDashboard = searchParams.get('dashboard') === 'true';
+
+    if (isDashboard) {
+      const [totalCount, recentRegistrations] = await Promise.all([
+        Registration.countDocuments({}),
+        Registration.find({}).sort({ registeredAt: -1 }).limit(5).lean()
+      ]);
+      
+      return NextResponse.json({ 
+        stats: {
+          total: totalCount,
+          recent: recentRegistrations
+        }
+      });
+    }
     
     const registrations = await Registration.find({}).sort({ registeredAt: -1 }).lean();
     return NextResponse.json({ registrations });

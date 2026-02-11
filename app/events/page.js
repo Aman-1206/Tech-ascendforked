@@ -80,9 +80,20 @@ const EventsPage = () => {
               className="bg-[#111]/50 backdrop-blur-sm rounded-2xl p-6 border border-[#333] hover:border-orange-500/50 transition-all duration-300 hover:transform hover:scale-105 hover:shadow-xl hover:shadow-orange-500/10 group flex flex-col h-full"
             >
               {/* Event Image/Icon */}
-              <div className="w-16 h-16 bg-gradient-to-br from-orange-500/20 to-amber-500/20 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300 overflow-hidden">
-                {event.imagePath ? (
-                  <img src={event.imagePath} alt={event.name} className="w-full h-full object-cover rounded-xl" />
+              <div className="w-16 h-16 bg-gradient-to-br from-orange-500/20 to-amber-500/20 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300 overflow-hidden relative">
+                {event.imagePath || event.mobileImagePath ? (
+                  <picture className="w-full h-full">
+                    {/* Mobile Image Source */}
+                    {event.mobileImagePath && (
+                      <source media="(max-width: 640px)" srcSet={event.mobileImagePath} />
+                    )}
+                    {/* Desktop/Fallback Image */}
+                    <img 
+                      src={event.imagePath || event.mobileImagePath} 
+                      alt={event.name} 
+                      className="w-full h-full object-cover rounded-xl" 
+                    />
+                  </picture>
                 ) : (
                   <span className="text-3xl">{event.image}</span>
                 )}

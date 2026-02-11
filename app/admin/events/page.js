@@ -21,6 +21,8 @@ const AdminEventsPage = () => {
   const [saving, setSaving] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [imagePreview, setImagePreview] = useState(null);
+  const [uploadingMobileImage, setUploadingMobileImage] = useState(false);
+  const [mobileImagePreview, setMobileImagePreview] = useState(null);
   const [deleteEventModal, setDeleteEventModal] = useState({ show: false, event: null });
   const [deletingEvent, setDeletingEvent] = useState(false);
 
@@ -90,6 +92,7 @@ const AdminEventsPage = () => {
         description: event.description || '',
         image: event.image || '📅',
         imagePath: event.imagePath || null,
+        mobileImagePath: event.mobileImagePath || null,
         date: event.date || '',
         time: event.time || '',
         duration: event.duration || '',
@@ -111,6 +114,7 @@ const AdminEventsPage = () => {
         maxFileSize: event.maxFileSize || 10,
       });
       setImagePreview(event.imagePath || null);
+      setMobileImagePreview(event.mobileImagePath || null);
     } else {
       setEditForm({
         name: '',
@@ -118,6 +122,7 @@ const AdminEventsPage = () => {
         description: '',
         image: '📅',
         imagePath: null,
+        mobileImagePath: null,
         date: '',
         time: '',
         duration: '',
@@ -139,6 +144,7 @@ const AdminEventsPage = () => {
         maxFileSize: 10,
       });
       setImagePreview(null);
+      setMobileImagePreview(null);
     }
     setEditModal({ show: true, event });
   };
@@ -215,16 +221,27 @@ const AdminEventsPage = () => {
   };
 
   // Handle image upload
-  const handleImageUpload = async (e) => {
+  const handleImageUpload = async (e, type = 'desktop') => {
     const file = e.target.files[0];
     if (!file) return;
 
     // Show preview immediately
     const reader = new FileReader();
-    reader.onload = (e) => setImagePreview(e.target.result);
+    reader.onload = (e) => {
+      if (type === 'mobile') {
+        setMobileImagePreview(e.target.result);
+      } else {
+        setImagePreview(e.target.result);
+      }
+    };
     reader.readAsDataURL(file);
 
-    setUploadingImage(true);
+    if (type === 'mobile') {
+      setUploadingMobileImage(true);
+    } else {
+      setUploadingImage(true);
+    }
+
     try {
       // Compress image before upload
       const compressedDataUrl = await compressImage(file);
@@ -238,7 +255,8 @@ const AdminEventsPage = () => {
       // Validating file size (1MB limit)
       if (blob.size > 1024 * 1024) {
         alert('Image is too large. Please use a smaller image (under 1MB after compression).');
-        setUploadingImage(false);
+        if (type === 'mobile') setUploadingMobileImage(false);
+        else setUploadingImage(false);
         return;
       }
 
@@ -254,7 +272,11 @@ const AdminEventsPage = () => {
 
       const data = await response.json();
       if (data.success) {
-        setEditForm(prev => ({ ...prev, imagePath: data.imagePath }));
+        if (type === 'mobile') {
+          setEditForm(prev => ({ ...prev, mobileImagePath: data.imagePath }));
+        } else {
+          setEditForm(prev => ({ ...prev, imagePath: data.imagePath }));
+        }
       } else {
         alert('Image upload failed: ' + (data.error || 'Unknown error'));
       }
@@ -262,7 +284,8 @@ const AdminEventsPage = () => {
       console.error('Error uploading image:', error);
       alert('Error uploading image');
     }
-    setUploadingImage(false);
+    if (type === 'mobile') setUploadingMobileImage(false);
+    else setUploadingImage(false);
   };
 
   // Save event
@@ -497,7 +520,7 @@ const AdminEventsPage = () => {
                     <input
                       type="file"
                       accept="image/*"
-                      onChange={handleImageUpload}
+                      onChange={(e) => handleImageUpload(e, 'desktop')}
                       className="hidden"
                       id="imageUpload"
                     />
@@ -508,6 +531,36 @@ const AdminEventsPage = () => {
                       {uploadingImage ? 'Uploading...' : 'Upload Image'}
                     </label>
                     <p className="text-gray-500 text-xs mt-1">PNG, JPG, GIF up to 5MB</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Mobile Image Upload */}
+              <div>
+                <label className="block text-gray-400 text-sm mb-2">Mobile Image (Optional)</label>
+                <div className="flex items-center gap-4">
+                  <div className="w-20 h-20 bg-[#222]/50 rounded-xl flex items-center justify-center overflow-hidden border border-[#333]">
+                    {mobileImagePreview ? (
+                      <img src={mobileImagePreview} alt="Mobile Preview" className="w-full h-full object-cover" />
+                    ) : (
+                      <span className="text-3xl text-gray-600">📱</span>
+                    )}
+                  </div>
+                  <div>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => handleImageUpload(e, 'mobile')}
+                      className="hidden"
+                      id="mobileImageUpload"
+                    />
+                    <label
+                      htmlFor="mobileImageUpload"
+                      className="cursor-pointer px-4 py-2 bg-[#222] hover:bg-[#333] border border-[#333] text-white rounded-lg font-medium transition-colors inline-flex items-center gap-2 text-sm"
+                    >
+                      {uploadingMobileImage ? 'Uploading...' : 'Upload Mobile Image'}
+                    </label>
+                    <p className="text-gray-500 text-xs mt-1">Optimized for mobile view</p>
                   </div>
                 </div>
               </div>

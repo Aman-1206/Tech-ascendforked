@@ -101,6 +101,7 @@ export async function POST(request) {
       description: body.description ? String(body.description).trim() : '',
       image: body.image || '📅',
       imagePath: body.imagePath || null,
+      mobileImagePath: body.mobileImagePath || null,
       date: body.date || '',
       time: body.time || '',
       duration: body.duration || '',

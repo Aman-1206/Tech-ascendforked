@@ -25,6 +25,9 @@ const EventSchema = new mongoose.Schema({
   imagePath: {
     type: String, // Path to uploaded image
   },
+  mobileImagePath: {
+    type: String, // Path to uploaded mobile image
+  },
   date: String,
   time: String,
   duration: String,
