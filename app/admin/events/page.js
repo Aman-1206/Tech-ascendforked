@@ -184,8 +184,8 @@ const AdminEventsPage = () => {
           const ctx = canvas.getContext('2d');
           
           // Max dimensions
-          const MAX_WIDTH = 800;
-          const MAX_HEIGHT = 800;
+          const MAX_WIDTH = 1920;
+          const MAX_HEIGHT = 1920;
           
           let width = img.width;
           let height = img.height;
@@ -206,8 +206,8 @@ const AdminEventsPage = () => {
           canvas.height = height;
           ctx.drawImage(img, 0, 0, width, height);
           
-          // Compress to JPEG with 0.7 quality
-          const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+          // Compress to JPEG with 0.85 quality (high quality)
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
           resolve(dataUrl);
         };
       };
@@ -234,6 +234,14 @@ const AdminEventsPage = () => {
       // Let's convert the dataURL to a Blob
       const res = await fetch(compressedDataUrl);
       const blob = await res.blob();
+      
+      // Validating file size (1MB limit)
+      if (blob.size > 1024 * 1024) {
+        alert('Image is too large. Please use a smaller image (under 1MB after compression).');
+        setUploadingImage(false);
+        return;
+      }
+
       const compressedFile = new File([blob], file.name, { type: 'image/jpeg' });
 
       const formData = new FormData();
