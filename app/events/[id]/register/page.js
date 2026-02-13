@@ -112,22 +112,19 @@ const RegisterPage = () => {
         }),
       });
 
-      const data = await response.json();
+     const data = await response.json();
 
-      if (data.alreadyRegistered) {
-        setAlreadyRegistered(true);
-        setError('This email is already registered for this event');
-      } else if (data.success) {
-        setSuccess(true);
-      } else {
-        setError(data.error || 'Registration failed. Please try again.');
-      }
-    } catch (error) {
-      setError('An error occurred. Please try again.');
-    }
+if (response.status === 409) {
+  setAlreadyRegistered(true);
+  setError('This email is already registered for this event');
+} 
+else if (response.ok) {
+  setSuccess(true);
+} 
+else {
+  setError(data.error || 'Registration failed. Please try again.');
+}
 
-    setIsSubmitting(false);
-  };
 
   if (eventLoading) {
     return (
