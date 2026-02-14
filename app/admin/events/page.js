@@ -294,8 +294,17 @@ const AdminEventsPage = () => {
   const handleSaveEvent = async () => {
     setSaving(true);
     try {
+      // Auto-generate registrationDeadline display string from deadline ISO value
+      const deadlineDisplay = editForm.deadline
+        ? new Date(editForm.deadline).toLocaleString('en-IN', {
+            dateStyle: 'medium',
+            timeStyle: 'short',
+          })
+        : editForm.registrationDeadline || '';
+
       const cleanedForm = {
         ...editForm,
+        registrationDeadline: deadlineDisplay,
         prizes: editForm.prizes?.filter(p => p.trim()) || [],
         requirements: editForm.requirements?.filter(r => r.trim()) || [],
         highlights: editForm.highlights?.filter(h => h.trim()) || [],
