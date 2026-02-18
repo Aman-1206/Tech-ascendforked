@@ -45,6 +45,10 @@ const QuizResponseSchema = new mongoose.Schema({
     type: Number,
     required: true,
   },
+  totalTimeTaken: {
+    type: Number, // Total seconds taken for the quiz
+    default: 0,
+  },
   submittedAt: {
     type: Date,
     default: Date.now,

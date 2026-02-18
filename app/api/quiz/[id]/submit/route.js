@@ -71,10 +71,17 @@ export async function POST(request, { params }) {
 
     // Calculate score (server-side only — not shown to user)
     let score = 0;
+    let totalTimeTaken = 0;
+    
     quiz.questions.forEach((q, index) => {
       const userAnswer = answers.find(a => a.questionIndex === index);
       const selectedOption = userAnswer ? userAnswer.selectedOption : -1;
       if (selectedOption === q.correctAnswer) score++;
+      
+      // Sum explicit time taken
+      if (userAnswer && userAnswer.timeTaken) {
+        totalTimeTaken += userAnswer.timeTaken;
+      }
     });
 
     // Save response
@@ -89,6 +96,7 @@ export async function POST(request, { params }) {
       })),
       score,
       totalQuestions: quiz.questions.length,
+      totalTimeTaken,
     });
 
     // Return only success + feedback link (NO score or results)

@@ -564,6 +564,7 @@ const AdminQuizPage = () => {
                               <th className="pb-2 pr-4">Name</th>
                               <th className="pb-2 pr-4">Email</th>
                               <th className="pb-2 pr-4">Score</th>
+                              <th className="pb-2 pr-4">Time</th>
                               <th className="pb-2 pr-4">Submitted</th>
                               <th className="pb-2">Action</th>
                             </tr>
@@ -580,6 +581,13 @@ const AdminQuizPage = () => {
                                   }`}>
                                     {r.score}/{r.totalQuestions}
                                   </span>
+                                </td>
+                                <td className="py-2 pr-4 text-gray-400 font-mono text-xs">
+                                  {r.totalTimeTaken ? (
+                                    `${Math.floor(r.totalTimeTaken / 60)}m ${r.totalTimeTaken % 60}s`
+                                  ) : (
+                                    <span title="Not recorded">-</span>
+                                  )}
                                 </td>
                                 <td className="py-2 pr-4 text-gray-400">
                                   {new Date(r.submittedAt).toLocaleString('en-IN', {
