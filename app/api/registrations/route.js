@@ -9,8 +9,6 @@ import dbConnect from '@/lib/mongodb';
 import Registration from '@/models/Registration';
 import Event from '@/models/Event';
 import { checkAdminAuth, checkAuth } from '@/lib/auth';
-import { sendRegistrationConfirmation } from '@/lib/email';
-
 export const dynamic = 'force-dynamic';
 
 // GET - Fetch all registrations or specific user's
@@ -149,16 +147,7 @@ export async function POST(request) {
     });
 
     // Send confirmation email (non-blocking — don't delay the response)
-    sendRegistrationConfirmation({
-      name: name.trim(),
-      email: email.toLowerCase().trim(),
-      eventName: event.name,
-      eventDate: event.date,
-      eventTime: event.time,
-      eventMode: event.mode,
-      eventLocation: event.location,
-      communityLink: event.communityLink,
-    }).catch(err => console.error('Email send failed:', err));
+
     
     return NextResponse.json({ 
       success: true, 

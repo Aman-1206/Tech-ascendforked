@@ -12,6 +12,7 @@ const EventsPage = () => {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [registeredEventIds, setRegisteredEventIds] = useState(new Set());
+  const [isAdmin, setIsAdmin] = useState(false);
   const { isLoaded, isSignedIn, user } = useUser();
 
   useEffect(() => {
@@ -50,6 +51,18 @@ const EventsPage = () => {
 
     fetchRegistrations();
   }, [isLoaded, isSignedIn, user]);
+
+  // Check admin status
+  useEffect(() => {
+    const checkAdmin = async () => {
+      if (!isLoaded || !isSignedIn) return;
+      try {
+        const res = await fetch('/api/quiz?admin=true');
+        if (res.ok) setIsAdmin(true);
+      } catch (err) { /* not admin */ }
+    };
+    checkAdmin();
+  }, [isLoaded, isSignedIn]);
 
 
 
@@ -159,7 +172,14 @@ const EventsPage = () => {
                     }
 
                     if (isClosed) {
-                      return (
+                      return isAdmin ? (
+                        <Link
+                          href={`/events/${event.id}`}
+                          className="block w-full bg-[#1a1a1a] border border-[#333] text-gray-400 h-12 rounded-xl font-medium hover:border-orange-500/30 hover:text-gray-300 transition-all text-center flex items-center justify-center"
+                        >
+                          {isExpired ? 'Registration Ended' : 'Registration Closed'} — View Details
+                        </Link>
+                      ) : (
                         <button
                           disabled
                           className="block w-full bg-[#1a1a1a] border border-[#333] text-gray-500 h-12 rounded-xl font-medium cursor-not-allowed"
