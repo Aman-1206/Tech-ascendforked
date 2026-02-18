@@ -45,7 +45,7 @@ export async function GET(request) {
     if (eventId) query.eventId = parseInt(eventId);
 
     const quizzes = await Quiz.find(query)
-      .select('title questions.question questions.options questions.timeLimit feedbackLink eventId startTime endTime')
+      .select('title questions.question questions.options questions.timeLimit questions.imagePath feedbackLink eventId startTime endTime')
       .sort({ createdAt: -1 })
       .lean();
 
@@ -70,39 +70,57 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Title and at least one question are required' }, { status: 400 });
     }
 
-    // Validate each question
-    for (let i = 0; i < questions.length; i++) {
-      const q = questions[i];
+    // Sanitize and validate each question
+    const sanitizedQuestions = questions.map((q, i) => {
+      const timeLimit = Number(q.timeLimit);
+      const correctAnswer = Number(q.correctAnswer);
       if (!q.question || !q.options || q.options.length !== 4) {
-        return NextResponse.json({ 
-          error: `Question ${i + 1}: Must have text and exactly 4 options` 
-        }, { status: 400 });
+        throw new Error(`Question ${i + 1}: Must have text and exactly 4 options`);
       }
-      if (q.correctAnswer === undefined || q.correctAnswer < 0 || q.correctAnswer > 3) {
-        return NextResponse.json({ 
-          error: `Question ${i + 1}: Must have a valid correct answer (0-3)` 
-        }, { status: 400 });
+      if (Number.isNaN(correctAnswer) || correctAnswer < 0 || correctAnswer > 3) {
+        throw new Error(`Question ${i + 1}: Must have a valid correct answer (0-3)`);
       }
-      if (!q.timeLimit || q.timeLimit < 5) {
-        return NextResponse.json({ 
-          error: `Question ${i + 1}: Time limit must be at least 5 seconds` 
-        }, { status: 400 });
+      if (Number.isNaN(timeLimit) || timeLimit < 5 || timeLimit > 300) {
+        throw new Error(`Question ${i + 1}: Time limit must be between 5 and 300 seconds`);
       }
+      return {
+        question: String(q.question).trim(),
+        options: q.options.map((o) => String(o).trim()),
+        correctAnswer: Math.floor(correctAnswer),
+        timeLimit: Math.floor(timeLimit),
+        imagePath: q.imagePath ? String(q.imagePath) : '',
+      };
+    });
+
+    const startDate = startTime && String(startTime).trim() ? new Date(startTime) : null;
+    const endDate = endTime && String(endTime).trim() ? new Date(endTime) : null;
+    if (startDate && Number.isNaN(startDate.getTime())) {
+      return NextResponse.json({ error: 'Invalid start time' }, { status: 400 });
+    }
+    if (endDate && Number.isNaN(endDate.getTime())) {
+      return NextResponse.json({ error: 'Invalid end time' }, { status: 400 });
     }
 
     const quiz = await Quiz.create({
       title: title.trim(),
-      questions,
+      questions: sanitizedQuestions,
       feedbackLink: feedbackLink?.trim() || '',
-      eventId: eventId || null,
-      startTime: startTime || null,
-      endTime: endTime || null,
+      eventId: eventId != null && eventId !== '' ? parseInt(eventId, 10) : null,
+      startTime: startDate,
+      endTime: endDate,
     });
 
     return NextResponse.json({ success: true, quiz }, { status: 201 });
   } catch (error) {
     console.error('POST quiz error:', error);
-    return NextResponse.json({ error: 'Failed to create quiz' }, { status: 500 });
+    const message = error instanceof Error ? error.message : 'Failed to create quiz';
+    const isValidation =
+      (error.message && error.message.startsWith('Question ')) ||
+      error.name === 'ValidationError';
+    return NextResponse.json(
+      { error: message },
+      { status: isValidation ? 400 : 500 }
+    );
   }
 }
 
@@ -179,35 +197,46 @@ export async function PUT(request) {
       return NextResponse.json({ error: 'Title and at least one question are required' }, { status: 400 });
     }
 
-    // Validate each question
-    for (let i = 0; i < questions.length; i++) {
-      const q = questions[i];
+    // Sanitize and validate each question (same as POST)
+    const sanitizedQuestions = questions.map((q, i) => {
+      const timeLimit = Number(q.timeLimit);
+      const correctAnswer = Number(q.correctAnswer);
       if (!q.question || !q.options || q.options.length !== 4) {
-        return NextResponse.json({ 
-          error: `Question ${i + 1}: Must have text and exactly 4 options` 
-        }, { status: 400 });
+        throw new Error(`Question ${i + 1}: Must have text and exactly 4 options`);
       }
-      if (q.correctAnswer === undefined || q.correctAnswer < 0 || q.correctAnswer > 3) {
-        return NextResponse.json({ 
-          error: `Question ${i + 1}: Must have a valid correct answer (0-3)` 
-        }, { status: 400 });
+      if (Number.isNaN(correctAnswer) || correctAnswer < 0 || correctAnswer > 3) {
+        throw new Error(`Question ${i + 1}: Must have a valid correct answer (0-3)`);
       }
-      if (!q.timeLimit || q.timeLimit < 5) {
-        return NextResponse.json({ 
-          error: `Question ${i + 1}: Time limit must be at least 5 seconds` 
-        }, { status: 400 });
+      if (Number.isNaN(timeLimit) || timeLimit < 5 || timeLimit > 300) {
+        throw new Error(`Question ${i + 1}: Time limit must be between 5 and 300 seconds`);
       }
+      return {
+        question: String(q.question).trim(),
+        options: q.options.map((o) => String(o).trim()),
+        correctAnswer: Math.floor(correctAnswer),
+        timeLimit: Math.floor(timeLimit),
+        imagePath: q.imagePath ? String(q.imagePath) : '',
+      };
+    });
+
+    const startDate = startTime && String(startTime).trim() ? new Date(startTime) : null;
+    const endDate = endTime && String(endTime).trim() ? new Date(endTime) : null;
+    if (startDate && Number.isNaN(startDate.getTime())) {
+      return NextResponse.json({ error: 'Invalid start time' }, { status: 400 });
+    }
+    if (endDate && Number.isNaN(endDate.getTime())) {
+      return NextResponse.json({ error: 'Invalid end time' }, { status: 400 });
     }
 
     const quiz = await Quiz.findByIdAndUpdate(
       id,
       {
         title: title.trim(),
-        questions,
+        questions: sanitizedQuestions,
         feedbackLink: feedbackLink?.trim() || '',
-        eventId: eventId || null,
-        startTime: startTime || null,
-        endTime: endTime || null,
+        eventId: eventId != null && eventId !== '' ? parseInt(eventId, 10) : null,
+        startTime: startDate,
+        endTime: endDate,
       },
       { new: true, runValidators: true }
     );
@@ -219,6 +248,13 @@ export async function PUT(request) {
     return NextResponse.json({ success: true, quiz });
   } catch (error) {
     console.error('PUT quiz error:', error);
-    return NextResponse.json({ error: 'Failed to update quiz' }, { status: 500 });
+    const message = error instanceof Error ? error.message : 'Failed to update quiz';
+    const isValidation =
+      (error.message && error.message.startsWith('Question ')) ||
+      error.name === 'ValidationError';
+    return NextResponse.json(
+      { error: message },
+      { status: isValidation ? 400 : 500 }
+    );
   }
 }

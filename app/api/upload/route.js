@@ -29,7 +29,7 @@ function getMimeType(filename) {
 // POST - Handle image upload (PROTECTED - Admin only)
 export async function POST(request) {
   try {
-    // Require admin authentication
+    // Require admin authentication (session cookie must be sent; add your email via /setup-admin or ADMIN_EMAILS in .env.local)
     const { isAdmin, error } = await checkAdminAuth();
     if (!isAdmin) {
       return error;

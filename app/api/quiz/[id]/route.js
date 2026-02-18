@@ -92,6 +92,7 @@ export async function GET(request, { params }) {
         question: q.question,
         options: q.options,
         timeLimit: q.timeLimit,
+        imagePath: q.imagePath || '',
       })),
     };
 

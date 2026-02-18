@@ -27,11 +27,13 @@ const AdminQuizPage = () => {
   const [startTime, setStartTime] = useState('');
   const [endTime, setEndTime] = useState('');
   const [questions, setQuestions] = useState([
-    { question: '', options: ['', '', '', ''], correctAnswer: 0, timeLimit: 30 }
+    { question: '', options: ['', '', '', ''], correctAnswer: 0, timeLimit: 30, imagePath: '' }
   ]);
   const [creating, setCreating] = useState(false);
   const [events, setEvents] = useState([]);
   const [deletingResponseId, setDeletingResponseId] = useState(null);
+  const [uploadingImages, setUploadingImages] = useState({}); // { questionIndex: true/false }
+  const [imagePreviews, setImagePreviews] = useState({}); // { questionIndex: dataUrl }
 
   // Fetch quizzes
   const fetchQuizzes = async () => {
@@ -90,7 +92,7 @@ const AdminQuizPage = () => {
 
   // Add a new question
   const addQuestion = () => {
-    setQuestions([...questions, { question: '', options: ['', '', '', ''], correctAnswer: 0, timeLimit: 30 }]);
+    setQuestions([...questions, { question: '', options: ['', '', '', ''], correctAnswer: 0, timeLimit: 30, imagePath: '' }]);
   };
 
   // Remove a question
@@ -120,9 +122,11 @@ const AdminQuizPage = () => {
     setSelectedEventId('');
     setStartTime('');
     setEndTime('');
-    setQuestions([{ question: '', options: ['', '', '', ''], correctAnswer: 0, timeLimit: 30 }]);
+    setQuestions([{ question: '', options: ['', '', '', ''], correctAnswer: 0, timeLimit: 30, imagePath: '' }]);
     setEditingQuiz(null);
     setShowCreateForm(false);
+    setImagePreviews({});
+    setUploadingImages({});
   };
 
   // Helper to format date for datetime-local input (YYYY-MM-DDTHH:mm)
@@ -141,12 +145,22 @@ const AdminQuizPage = () => {
     setSelectedEventId(quiz.eventId ? String(quiz.eventId) : '');
     setStartTime(formatDateTimeLocal(quiz.startTime));
     setEndTime(formatDateTimeLocal(quiz.endTime));
-    setQuestions(quiz.questions.map(q => ({
+    const questionsWithImages = quiz.questions.map(q => ({
       question: q.question,
       options: [...q.options],
       correctAnswer: q.correctAnswer,
       timeLimit: q.timeLimit,
-    })));
+      imagePath: q.imagePath || '',
+    }));
+    setQuestions(questionsWithImages);
+    // Set image previews for existing images
+    const previews = {};
+    questionsWithImages.forEach((q, idx) => {
+      if (q.imagePath) {
+        previews[idx] = q.imagePath;
+      }
+    });
+    setImagePreviews(previews);
     setShowCreateForm(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -158,13 +172,17 @@ const AdminQuizPage = () => {
 
     const payload = {
       title: quizTitle,
-      questions: questions.map(q => ({
-        ...q,
-        timeLimit: parseInt(q.timeLimit),
-        correctAnswer: parseInt(q.correctAnswer),
-      })),
+      questions: questions.map(q => {
+        const timeLimit = parseInt(q.timeLimit, 10);
+        const correctAnswer = parseInt(q.correctAnswer, 10);
+        return {
+          ...q,
+          timeLimit: Number.isNaN(timeLimit) || timeLimit < 5 ? 30 : Math.min(300, timeLimit),
+          correctAnswer: Number.isNaN(correctAnswer) || correctAnswer < 0 || correctAnswer > 3 ? 0 : correctAnswer,
+        };
+      }),
       feedbackLink,
-      eventId: selectedEventId ? parseInt(selectedEventId) : null,
+      eventId: selectedEventId ? parseInt(selectedEventId, 10) : null,
       startTime: startTime || null,
       endTime: endTime || null,
     };
@@ -222,6 +240,126 @@ const AdminQuizPage = () => {
     } catch (error) {
       console.error('Error deleting quiz:', error);
     }
+  };
+
+  // Image compression helper
+  const compressImage = (file) => {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = (event) => {
+        const img = new Image();
+        img.src = event.target.result;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+
+          // Max dimensions
+          const MAX_WIDTH = 1920;
+          const MAX_HEIGHT = 1920;
+
+          let width = img.width;
+          let height = img.height;
+
+          if (width > height) {
+            if (width > MAX_WIDTH) {
+              height *= MAX_WIDTH / width;
+              width = MAX_WIDTH;
+            }
+          } else {
+            if (height > MAX_HEIGHT) {
+              width *= MAX_HEIGHT / height;
+              height = MAX_HEIGHT;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          ctx.drawImage(img, 0, 0, width, height);
+
+          // Compress to JPEG with 0.85 quality (high quality)
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+          resolve(dataUrl);
+        };
+      };
+    });
+  };
+
+  // Handle image upload for a question
+  const handleQuestionImageUpload = async (e, questionIndex) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Show preview immediately
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      setImagePreviews(prev => ({ ...prev, [questionIndex]: e.target.result }));
+    };
+    reader.readAsDataURL(file);
+
+    setUploadingImages(prev => ({ ...prev, [questionIndex]: true }));
+
+    try {
+      // Compress image before upload
+      const compressedDataUrl = await compressImage(file);
+
+      // Convert base64 back to blob for upload
+      const res = await fetch(compressedDataUrl);
+      const blob = await res.blob();
+
+      // Validating file size (1MB limit)
+      if (blob.size > 1024 * 1024) {
+        alert('Image is too large. Please use a smaller image (under 1MB after compression).');
+        setUploadingImages(prev => ({ ...prev, [questionIndex]: false }));
+        return;
+      }
+
+      const compressedFile = new File([blob], file.name, { type: 'image/jpeg' });
+
+      const formData = new FormData();
+      formData.append('image', compressedFile);
+
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+        credentials: 'include',
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        updateQuestion(questionIndex, 'imagePath', data.imagePath);
+        setImagePreviews(prev => ({ ...prev, [questionIndex]: data.imagePath }));
+      } else {
+        const msg = response.status === 403 && data.hint
+          ? `${data.error}\n\n${data.hint}`
+          : (data.error || 'Unknown error');
+        alert('Image upload failed: ' + msg);
+        setImagePreviews(prev => {
+          const newPreviews = { ...prev };
+          delete newPreviews[questionIndex];
+          return newPreviews;
+        });
+      }
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      alert('Error uploading image');
+      setImagePreviews(prev => {
+        const newPreviews = { ...prev };
+        delete newPreviews[questionIndex];
+        return newPreviews;
+      });
+    }
+    setUploadingImages(prev => ({ ...prev, [questionIndex]: false }));
+  };
+
+  // Remove image from a question
+  const removeQuestionImage = (questionIndex) => {
+    updateQuestion(questionIndex, 'imagePath', '');
+    setImagePreviews(prev => {
+      const newPreviews = { ...prev };
+      delete newPreviews[questionIndex];
+      return newPreviews;
+    });
   };
 
   // Loading state
@@ -402,6 +540,57 @@ const AdminQuizPage = () => {
                       className="w-full px-4 py-3 bg-[#222] border border-[#444] rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-orange-500 transition-colors mb-4"
                       required
                     />
+
+                    {/* Image Upload */}
+                    <div className="mb-4">
+                      <label className="block text-sm font-medium text-gray-300 mb-2">Question Image (Optional)</label>
+                      {imagePreviews[qIndex] ? (
+                        <div className="relative">
+                          <img
+                            src={imagePreviews[qIndex]}
+                            alt="Question preview"
+                            className="max-w-full max-h-64 rounded-lg border border-[#444] mb-2"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => removeQuestionImage(qIndex)}
+                            className="absolute top-2 right-2 px-2 py-1 bg-red-600/80 text-white rounded-lg text-xs hover:bg-red-600 transition-colors"
+                          >
+                            ✕ Remove
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="border-2 border-dashed border-[#444] rounded-lg p-4 text-center hover:border-[#555] transition-colors">
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => handleQuestionImageUpload(e, qIndex)}
+                            disabled={uploadingImages[qIndex]}
+                            className="hidden"
+                            id={`image-upload-${qIndex}`}
+                          />
+                          <label
+                            htmlFor={`image-upload-${qIndex}`}
+                            className={`cursor-pointer flex flex-col items-center gap-2 ${
+                              uploadingImages[qIndex] ? 'opacity-50 cursor-not-allowed' : ''
+                            }`}
+                          >
+                            {uploadingImages[qIndex] ? (
+                              <>
+                                <div className="w-8 h-8 border-2 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
+                                <span className="text-sm text-gray-400">Uploading...</span>
+                              </>
+                            ) : (
+                              <>
+                                <span className="text-2xl">📷</span>
+                                <span className="text-sm text-gray-400">Click to upload image</span>
+                                <span className="text-xs text-gray-500">PNG, JPG, GIF, WebP (max 1MB)</span>
+                              </>
+                            )}
+                          </label>
+                        </div>
+                      )}
+                    </div>
 
                     {/* Options */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">

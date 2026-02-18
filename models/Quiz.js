@@ -30,6 +30,10 @@ const QuestionSchema = new mongoose.Schema({
     min: 5,
     max: 300,
   },
+  imagePath: {
+    type: String,
+    default: '',
+  },
 }, { _id: false });
 
 const QuizSchema = new mongoose.Schema({

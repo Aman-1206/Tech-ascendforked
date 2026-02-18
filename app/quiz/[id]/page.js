@@ -423,6 +423,17 @@ const QuizPage = ({ params }) => {
             {question.question}
           </h2>
 
+          {/* Question Image */}
+          {question.imagePath && (
+            <div className="mb-8 flex justify-center">
+              <img
+                src={question.imagePath}
+                alt="Question illustration"
+                className="max-w-full max-h-96 rounded-xl border border-[#333] shadow-lg"
+              />
+            </div>
+          )}
+
           {/* Options */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-8">
             {question.options.map((option, index) => (
