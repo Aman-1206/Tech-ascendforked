@@ -180,7 +180,7 @@ const QuizPage = ({ params }) => {
   // Loading
   if (!isLoaded || loading) {
     return (
-      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
+      <div className="min-h-screen bg-[#0a0a0a] pt-24 flex items-center justify-center">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-orange-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-gray-400">Loading quiz...</p>
@@ -192,7 +192,7 @@ const QuizPage = ({ params }) => {
   // Not signed in
   if (!user) {
     return (
-      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center px-4">
+      <div className="min-h-screen bg-[#0a0a0a] pt-24 flex items-center justify-center px-4">
         <div className="text-center max-w-md">
           <div className="w-20 h-20 bg-orange-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
             <span className="text-4xl">🔐</span>
@@ -212,7 +212,7 @@ const QuizPage = ({ params }) => {
   // Error
   if (error && !submitted) {
     return (
-      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center px-4">
+      <div className="min-h-screen bg-[#0a0a0a] pt-24 flex items-center justify-center px-4">
         <div className="text-center max-w-md">
           <div className="w-20 h-20 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
             <span className="text-4xl">❌</span>
@@ -230,7 +230,7 @@ const QuizPage = ({ params }) => {
     const feedbackLink = results.feedbackLink || quiz?.feedbackLink;
 
     return (
-      <div className="min-h-screen bg-[#0a0a0a] py-8 px-4">
+      <div className="min-h-screen bg-[#0a0a0a] pt-24 pb-8 px-4">
         <div className="max-w-2xl mx-auto">
           <div className="bg-[#111]/80 backdrop-blur-sm rounded-3xl p-8 border border-[#333] text-center mb-8">
             <div className="w-20 h-20 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -273,7 +273,7 @@ const QuizPage = ({ params }) => {
   if (alreadySubmitted && !submitted) {
     const feedbackLink = quiz?.feedbackLink;
     return (
-      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center px-4">
+      <div className="min-h-screen bg-[#0a0a0a] pt-24 flex items-center justify-center px-4">
         <div className="max-w-lg w-full">
           <div className="bg-[#111]/80 backdrop-blur-sm rounded-3xl p-8 border border-[#333] text-center">
             <div className="w-20 h-20 bg-amber-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -308,7 +308,7 @@ const QuizPage = ({ params }) => {
   // Start screen
   if (!started) {
     return (
-      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center px-4">
+      <div className="min-h-screen bg-[#0a0a0a] pt-24 flex items-center justify-center px-4">
         <div className="max-w-lg w-full">
           <div className="bg-[#111]/80 backdrop-blur-sm rounded-3xl p-8 border border-[#333] text-center">
             <div className="w-20 h-20 bg-gradient-to-br from-orange-500 to-amber-500 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg shadow-orange-500/25">

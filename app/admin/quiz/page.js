@@ -430,7 +430,6 @@ const AdminQuizPage = () => {
                         </div>
                       ))}
                     </div>
-                    <p className="text-xs text-gray-500">💡 Click the letter button to mark the correct answer (green = correct)</p>
                   </div>
                 ))}
               </div>
