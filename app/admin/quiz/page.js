@@ -125,14 +125,22 @@ const AdminQuizPage = () => {
     setShowCreateForm(false);
   };
 
+  // Helper to format date for datetime-local input (YYYY-MM-DDTHH:mm)
+  const formatDateTimeLocal = (dateString) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    const pad = (num) => num.toString().padStart(2, '0');
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+  };
+
   // Start editing a quiz
   const startEditing = (quiz) => {
     setEditingQuiz(quiz._id);
     setQuizTitle(quiz.title);
     setFeedbackLink(quiz.feedbackLink || '');
     setSelectedEventId(quiz.eventId ? String(quiz.eventId) : '');
-    setStartTime(quiz.startTime ? new Date(quiz.startTime).toISOString().slice(0, 16) : '');
-    setEndTime(quiz.endTime ? new Date(quiz.endTime).toISOString().slice(0, 16) : '');
+    setStartTime(formatDateTimeLocal(quiz.startTime));
+    setEndTime(formatDateTimeLocal(quiz.endTime));
     setQuestions(quiz.questions.map(q => ({
       question: q.question,
       options: [...q.options],

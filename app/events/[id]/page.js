@@ -314,7 +314,7 @@ const EventDetailPage = () => {
                           </div>
                           {hasEnded ? (
                             <span className="px-4 py-2 bg-red-500/10 text-red-400 border border-red-500/20 rounded-xl font-medium text-sm">
-                              Quiz Ended
+                              The timing to attend quiz is closed
                             </span>
                           ) : !hasStarted ? (
                             <div className="text-right">

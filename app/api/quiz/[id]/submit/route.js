@@ -43,7 +43,7 @@ export async function POST(request, { params }) {
       return NextResponse.json({ error: 'This quiz is not available yet' }, { status: 403 });
     }
     if (quiz.endTime && now > new Date(quiz.endTime)) {
-      return NextResponse.json({ error: 'This quiz has ended' }, { status: 403 });
+      return NextResponse.json({ error: 'The timing to attend quiz is closed' }, { status: 403 });
     }
 
     // Registration check for event-linked quizzes

@@ -51,6 +51,8 @@ const QuizPage = ({ params }) => {
         } else if (data.notRegistered) {
           setNotRegistered(true);
           setError(data.error);
+        } else if (data.quiz && data.quiz.endTime && new Date() > new Date(data.quiz.endTime)) {
+          setError('The timing to attend quiz is closed');
         } else {
           setError(data.error || 'Failed to load quiz');
         }
