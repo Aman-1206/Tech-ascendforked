@@ -25,6 +25,9 @@ const EventDetailPage = () => {
   const [uploadError, setUploadError] = useState('');
   const fileInputRef = useRef(null);
 
+  // Quiz state
+  const [eventQuizzes, setEventQuizzes] = useState([]);
+
   useEffect(() => {
     const fetchEvent = async () => {
       try {
@@ -85,6 +88,22 @@ const EventDetailPage = () => {
     };
     checkSubmission();
   }, [eventId, isLoaded, isSignedIn, user]);
+
+  // Fetch quizzes linked to this event
+  useEffect(() => {
+    const fetchEventQuizzes = async () => {
+      try {
+        const response = await fetch(`/api/quiz?eventId=${eventId}`);
+        if (response.ok) {
+          const data = await response.json();
+          setEventQuizzes(data.quizzes || []);
+        }
+      } catch (error) {
+        console.error('Error fetching event quizzes:', error);
+      }
+    };
+    if (eventId) fetchEventQuizzes();
+  }, [eventId]);
 
   // Handle file upload
   const handleFileUpload = async () => {
@@ -270,6 +289,59 @@ const EventDetailPage = () => {
                 </a>
               )}
             </div>
+
+            {/* Quiz Section — visible to registered users */}
+            {eventQuizzes.length > 0 && isRegistered && (
+              <div className="mb-8">
+                <h2 className="text-xl font-bold text-white mb-4 flex items-center">
+                  <span className="w-8 h-8 bg-purple-500/20 rounded-lg flex items-center justify-center mr-3">📝</span>
+                  Event Quiz
+                </h2>
+                <div className="space-y-3">
+                  {eventQuizzes.map((quiz) => {
+                    const now = new Date();
+                    const hasStarted = !quiz.startTime || now >= new Date(quiz.startTime);
+                    const hasEnded = quiz.endTime && now > new Date(quiz.endTime);
+
+                    return (
+                      <div key={quiz._id} className="bg-[#222]/50 rounded-xl p-5 border border-purple-500/20">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                          <div>
+                            <h3 className="text-white font-semibold mb-1">{quiz.title}</h3>
+                            <p className="text-gray-400 text-sm">
+                              {quiz.questions?.length || 0} question{(quiz.questions?.length || 0) !== 1 ? 's' : ''}
+                            </p>
+                          </div>
+                          {hasEnded ? (
+                            <span className="px-4 py-2 bg-red-500/10 text-red-400 border border-red-500/20 rounded-xl font-medium text-sm">
+                              Quiz Ended
+                            </span>
+                          ) : !hasStarted ? (
+                            <div className="text-right">
+                              <span className="px-4 py-2 bg-amber-500/10 text-amber-400 border border-amber-500/20 rounded-xl font-medium text-sm inline-block">
+                                ⏳ Starts: {new Date(quiz.startTime).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                              </span>
+                            </div>
+                          ) : (
+                            <a
+                              href={`/quiz/${quiz._id}`}
+                              className="px-5 py-2.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-semibold hover:from-purple-500 hover:to-pink-500 transition-all shadow-lg shadow-purple-500/25 text-center"
+                            >
+                              🚀 Take Quiz
+                            </a>
+                          )}
+                        </div>
+                        {quiz.endTime && hasStarted && !hasEnded && (
+                          <p className="text-gray-500 text-xs mt-2">
+                            Ends: {new Date(quiz.endTime).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                          </p>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
             {/* Details Grid */}
             <div className="grid sm:grid-cols-2 gap-6 mb-8">

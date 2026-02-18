@@ -25,6 +25,7 @@ const AdminEventsPage = () => {
   const [mobileImagePreview, setMobileImagePreview] = useState(null);
   const [deleteEventModal, setDeleteEventModal] = useState({ show: false, event: null });
   const [deletingEvent, setDeletingEvent] = useState(false);
+  const [linkedQuizzes, setLinkedQuizzes] = useState([]);
 
   // Check admin access
   const checkAdminAccess = async () => {
@@ -83,7 +84,7 @@ const AdminEventsPage = () => {
   };
 
   // Open edit modal
-  const openEditModal = (event = null) => {
+  const openEditModal = async (event = null) => {
     if (event) {
       setEditForm({
         id: event.id,
@@ -149,6 +150,23 @@ const AdminEventsPage = () => {
       setMobileImagePreview(null);
     }
     setEditModal({ show: true, event });
+
+    // Fetch linked quizzes for existing events
+    if (event && event.id) {
+      try {
+        const res = await fetch(`/api/quiz?admin=true&eventId=${event.id}`);
+        if (res.ok) {
+          const data = await res.json();
+          setLinkedQuizzes(data.quizzes || []);
+        } else {
+          setLinkedQuizzes([]);
+        }
+      } catch (err) {
+        setLinkedQuizzes([]);
+      }
+    } else {
+      setLinkedQuizzes([]);
+    }
   };
 
   // Handle form input change
@@ -873,6 +891,94 @@ const AdminEventsPage = () => {
                   </div>
                 )}
               </div>
+
+              {/* Linked Quizzes Section (only when editing existing event) */}
+              {editForm.id && (
+                <div className="border-t border-[#333] pt-4 mt-4">
+                  <h4 className="text-white font-semibold mb-4 flex items-center gap-2">
+                    <svg className="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                    </svg>
+                    Linked Quizzes
+                  </h4>
+
+                  {linkedQuizzes.length === 0 ? (
+                    <div className="bg-[#222]/50 rounded-xl p-4 text-center">
+                      <p className="text-gray-500 text-sm mb-2">No quizzes linked to this event</p>
+                      <Link
+                        href="/admin/quiz"
+                        className="text-purple-400 hover:text-purple-300 text-sm font-medium"
+                      >
+                        + Create Quiz in Admin Panel →
+                      </Link>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {linkedQuizzes.map((quiz) => {
+                        const now = new Date();
+                        const hasStarted = !quiz.startTime || now >= new Date(quiz.startTime);
+                        const hasEnded = quiz.endTime && now > new Date(quiz.endTime);
+                        const isLive = hasStarted && !hasEnded;
+
+                        return (
+                          <div key={quiz._id} className="bg-[#222]/50 rounded-xl p-4 border border-[#333]">
+                            <div className="flex items-center justify-between mb-2">
+                              <h5 className="text-white font-medium text-sm">{quiz.title}</h5>
+                              <span className={`px-2 py-0.5 rounded text-[10px] font-medium ${
+                                hasEnded
+                                  ? 'bg-gray-500/20 text-gray-400 border border-gray-500/30'
+                                  : isLive
+                                  ? 'bg-green-500/20 text-green-400 border border-green-500/30'
+                                  : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                              }`}>
+                                {hasEnded ? 'Ended' : isLive ? 'Live' : 'Scheduled'}
+                              </span>
+                            </div>
+
+                            {/* Time info */}
+                            <div className="text-gray-500 text-xs space-y-1 mb-3">
+                              {quiz.startTime && (
+                                <p>🕐 Start: {new Date(quiz.startTime).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}</p>
+                              )}
+                              {quiz.endTime && (
+                                <p>🕐 End: {new Date(quiz.endTime).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}</p>
+                              )}
+                            </div>
+
+                            {/* Quiz link */}
+                            <div className="flex items-center gap-2">
+                              <Link
+                                href={`/quiz/${quiz._id}`}
+                                target="_blank"
+                                className="text-xs px-3 py-1.5 bg-purple-600/20 text-purple-400 hover:bg-purple-600/30 rounded-lg transition-colors border border-purple-500/20"
+                              >
+                                Open Quiz ↗
+                              </Link>
+                              <button
+                                onClick={() => {
+                                  const url = `${window.location.origin}/quiz/${quiz._id}`;
+                                  navigator.clipboard.writeText(url);
+                                  alert('Quiz link copied!');
+                                }}
+                                className="text-xs px-3 py-1.5 bg-[#333] text-gray-300 hover:bg-[#444] rounded-lg transition-colors"
+                              >
+                                📋 Copy Link
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+
+                      <Link
+                        href="/admin/quiz"
+                        className="block text-center text-purple-400 hover:text-purple-300 text-sm font-medium mt-2"
+                      >
+                        Manage Quizzes →
+                      </Link>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Modal Actions */}
